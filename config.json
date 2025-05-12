@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "openremote": {
+      "command": "mcphost",
+      "args": ["run", "mcp_test.py"]
+    }
+  }
+}

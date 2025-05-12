@@ -1,0 +1,17 @@
+services:
+  ollama:
+    image: ollama/ollama
+    container_name: OpenRemote_Ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ./ollama_config.json:/root/.ollama/config.json:ro
+    environment:
+      - OLLAMA_CONFIG=/root/.ollama/config.json
+    restart: unless-stopped
+    # Comment below if you dont want to use GPU
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - capabilities: [gpu]
