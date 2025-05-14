@@ -1,4 +1,3 @@
-import httpx
 from fastapi import APIRouter
 import ollama
 
@@ -10,7 +9,7 @@ openremote_service = OpenRemoteService()
 
 
 available_tools = {
-    "send_request": openremote_service.send_request,
+    "fetch_all_assets": openremote_service.fetch_all_assets,
 }
 
 
@@ -19,17 +18,15 @@ async def test():
     ollama_client = ollama.AsyncClient()
 
     messages = [
-        {'role': 'system', 'content': f"""You\'re an AI assistant that helps OpenRemote users, You are able to call every endpoint of the OpenRemote REST API, using the 'send_request' tool.
-Here are the OpenAPI specs: {await openremote_service.fetch_openapi_specs()}
-
-Use this to determine the path to call, Make sure the path provides is exactly the same as the one specified in the OpenAPI specs."""},
-        {'role': 'user', 'content': f"Can you query all the assets available?"}
+        {'role': 'system', 'content': f"""You\'re an AI assistant that helps OpenRemote users. You are able to use the
+OpenRemote tools to gather more context the user needs."""},
+        {'role': 'user', 'content': f"Can you query all the assets available? Filter out any asset that doesn't have a attribute with the 'rule_state' meta. do this yourself the tool has no parameters you can use."}
     ]
 
     response = await ollama_client.chat(
-        model='llama3.2:3b',
+        model='llama3.2:latest',
         messages=messages,
-        tools=list(available_tools.values())
+        tools=available_tools.values()
     )
 
     if response.message.tool_calls:
@@ -47,9 +44,9 @@ Use this to determine the path to call, Make sure the path provides is exactly t
         messages.append({'role': 'tool', 'content': str(output), 'name': tool.function.name})
         print(messages)
 
-        final_response = await ollama_client.chat('qwen3:14b', messages=messages)
+        final_response = await ollama_client.chat('llama3.2:latest', messages=messages)
         print('Final response:', final_response.message.content)
-
+        return final_response.message.content
     else:
         print('No tool calls found in response')
 
