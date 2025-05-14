@@ -6,7 +6,8 @@ Integration for OpenRemote Platform to connect with an any of the popular LLMs
 [![GPLv3 license](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://github.com/Openremote-Combi-group/ai-service/blob/main/LICENSE.txt)
 
 ## Supported LLMs
-- Ollama (Only models that support 'tool calling')
+- [Ollama](https://ollama.com/) (Only models that support 'tool calling')
+
 
 ## Getting started
 Prerequisites
