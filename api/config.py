@@ -5,6 +5,8 @@ from pydantic import HttpUrl
 class Config(BaseSettings):
     debug: bool = False
 
+    openai_api_key: str
+
     ollama_host: HttpUrl
     openremote_host: HttpUrl
     openremote_client_id: str

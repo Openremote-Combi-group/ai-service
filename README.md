@@ -10,6 +10,7 @@ Integration for OpenRemote Platform to connect with an any of the popular LLMs
 
 
 ## Getting started
+
 Prerequisites
 - OpenRemote deployed
 - Docker installed
@@ -42,7 +43,16 @@ volumes:
 
 
 ## Development guide
+
+### Libraries & Frameworks
+- [Uvicorn (Web server)](https://www.uvicorn.org/)
+- [FastAPI (ASGI framework)](https://fastapi.tiangolo.com/)
+- [Langchain (LLM integration)](https://www.langchain.com/)
+- [OpenRemote Client](https://github.com/Spider-Frog/openremote_client)
+
+
 ### Installation
+
 Prerequisites
 - Python 3.10+ installed
 - Docker installed
@@ -88,4 +98,9 @@ export OLLAMA_HOST=http://localhost:11434
 7. Start the Docker containers needed for development
 ```shell
 docker compose -f docker-compose.dev.yml up
+```
+
+8. Start development servers
+```shell
+uvicorn api:app --reload
 ```

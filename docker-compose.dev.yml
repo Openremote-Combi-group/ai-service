@@ -10,16 +10,16 @@ services:
       - OLLAMA_CONFIG=/root/.ollama/config.json
 
     # Uncomment for AMD GPUs
-    devices:
-      - /dev/kfd
-      - /dev/dri
+#     devices:
+#       - /dev/kfd
+#       - /dev/dri
 
     # Uncomment for Nvidia GPUs
-    #deploy:
-    #  resources:
-    #    reservations:
-    #      devices:
-    #        - capabilities: [gpu]
+    deploy:
+     resources:
+       reservations:
+         devices:
+           - capabilities: [gpu]
 
 volumes:
   ollama:
