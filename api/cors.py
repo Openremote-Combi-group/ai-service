@@ -7,10 +7,12 @@ def init_cors(app: FastAPI):
     if config.debug:
         origins = [
             "http://localhost:8000",
+            "http://localhost:9000",
             *config.cors_allowed_domains
         ]
     else:
         origins = [
+            "http://localhost:9000",
             *config.cors_allowed_domains
         ]
 

@@ -63,33 +63,50 @@ class Asset(BaseModel):
     attributeName: str
 
 
+class NodePosition(BaseModel):
+    x: int
+    y: int
+
+
+class NodeAssetPicker(BaseModel):
+    assetId: str = Field(description="Id of the Asset")
+    attributeName: str = Field(description="Name of the Asset attribute to be used.")
+
+
+class Picker(BaseModel):
+    type: Literal["ASSET_ATTRIBUTE"]
+
+class NodeInternal(BaseModel):
+    name: str
+    picker: Picker
+    value: NodeAssetPicker
+
+
+class NodeSocket(BaseModel):
+    id: str = Field(description="Random generated id", min_length=10, max_length=10)
+    name: str
+    nodeId: str = Field(description="Id of the node this socket belongs to.", min_length=10, max_length=10)
+    type: Literal["NUMBER"]
+
+
 class Node(BaseModel):
     id: str = Field(description="Random generated id", min_length=10, max_length=10)
     name: Literal["READ_ATTRIBUTE", "ADD_OPERATOR", "WRITE_ATTRIBUTE"]
-    asset: Asset | None = Field(description="If name READ_ATTRIBUTE or WRITE_ATTRIBUTE, then you will enter the asset here.")
+    type: Literal["INPUT", "OUTPUT", "PROCESSOR"]
+    position: NodePosition
+    internals: list[NodeInternal] = Field(description="List of internals that reference an asset")
+    outputs: list[NodeSocket] = Field("Output sockets that Input sockets can connect to. INPUT & PROCESSOR always has 1 & OUTPUT has none.")
+    inputs: list[NodeSocket] = Field("Input sockets that Output sockets can connect to. INPUT has none, PROCESSOR always has 2 & OUTPUT always has 1.")
 
 
+class NodeConnection(BaseModel):
+    nodeSocketId1: str = Field(description="1st id of the node socket to connect to.", min_length=10, max_length=10)
+    nodeSocketId2: str = Field(description="2nd id of the node socket to connect to.", min_length=10, max_length=10)
 
 
-class Inputs(BaseModel):
-    assetId: str = Field(description="Id of the asset to be used for the rule")
-    attributeName: str = Field(description="Name of the attribute to be used for the rule")
-
-
-class Processors(BaseModel):
-    operator: Literal["add", "subtract", "multiply", "divide"] = Field(description="Processors to be used for the rule")
-    inputs: list[Inputs] = Field("List of the inputs that this operator uses.")
-
-
-class Output(BaseModel):
-    assetId: str = Field(description="Id of the asset to be used for the rule")
-    attributeName: str = Field(description="Name of the attribute to be used for the rule")
-    input: Processors = Field("Processors that is used to calculate the output.")
-
-
-class FlowRule(BaseModel):
-    output: Output = Field(description="The final output where all the input should go into")
-
+class NodeOutput(BaseModel):
+    nodes: list[Node] = Field(description="List of nodes inside the rules.")
+    connections: list[NodeConnection] = Field(description="List of node connection that determine how nodes socket should connect.")
 
 
 @router.get("/ws-debug")
@@ -124,7 +141,7 @@ async def websocket_endpoint(websocket: WebSocket):
         template.append(HumanMessage(f"""{await or_service.fetch_all_assets()}"""))
         template.append(HumanMessage(message))
 
-        parser = JsonOutputParser(pydantic_object=FlowRule)
+        parser = JsonOutputParser(pydantic_object=NodeOutput)
 
         formatted_template = template.format_prompt(
             format_instructions=parser.get_format_instructions()
@@ -134,9 +151,52 @@ async def websocket_endpoint(websocket: WebSocket):
 
         chain = model | parser
 
-        response = await chain.ainvoke(formatted_template)
+        # response = await chain.ainvoke(formatted_template)
 
-        await websocket.send_json(response)
+        # await websocket.send_json(response)
 
-        # async for token in chain.astream(formatted_template):
-        #     await websocket.send_json(token)
+        async for token in chain.astream(formatted_template):
+            await websocket.send_json(token)
+
+
+@router.post("/test")
+async def test(prompt: str):
+    # model = ChatOllama(
+    #     base_url=config.ollama_host.encoded_string(),
+    #     model='llama3.2:3b',
+    #     temperature=0.2,
+    #     verbose=True
+    # )
+    model = ChatOpenAI(
+        api_key=config.openai_api_key,
+        model='gpt-4o',
+        temperature=0.2,
+    )
+
+    template = ChatPromptTemplate(
+        [("system", """You\'re an AI assistant that helps OpenRemote users. {format_instructions}""")]
+    )
+
+    or_service = OpenRemoteService()
+
+    template.append(HumanMessage(f"""{await or_service.fetch_all_assets()}"""))
+    template.append(HumanMessage(prompt))
+
+    parser = JsonOutputParser(pydantic_object=NodeOutput)
+
+    formatted_template = template.format_prompt(
+        format_instructions=parser.get_format_instructions()
+    )
+
+    print(formatted_template)
+
+    chain = model | parser
+
+    response = await chain.ainvoke(formatted_template)
+
+    return response
+
+        # await websocket.send_json(response)
+
+    # async for token in chain.astream(formatted_template):
+    #     await websocket.send_json(token)
